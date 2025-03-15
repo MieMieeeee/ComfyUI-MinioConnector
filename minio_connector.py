@@ -1,7 +1,8 @@
 import os.path
-
 from minio import Minio
 from minio.error import S3Error
+
+import folder_paths
 from .utils import mie_log
 
 MY_CATEGORY = "🐑 Minio-Connector/🐑 Minio Connector"
@@ -107,3 +108,79 @@ class MinioUploadFile(object):
         if not object_name:
             object_name = os.path.basename(file_path)
         return minio_connector.upload(bucket_name, object_name, file_path),
+
+
+class MinioUploadFolder(object):
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "minio_connector": ("MINIO_CONNECTOR",),
+                "bucket_name": ("STRING", {"default": ""}),
+                "folder_path": ("STRING", {"default": "output"}),
+            },
+        }
+
+    RETURN_TYPES = ("STRING",)
+    RETURN_NAMES = ("log",)
+    FUNCTION = "execute"
+    DESCRIPTION = """
+    For safety, only allow to upload folder under ComfyUI directory, such as temp/abc, input/def, output/ghi etc.
+    """
+
+    CATEGORY = MY_CATEGORY
+
+    def execute(self, minio_connector, bucket_name, folder_path):
+        if not bucket_name or not folder_path:
+            raise Exception("bucket_name or folder_path is empty")
+
+        folder_path = os.path.join(folder_paths.base_path, folder_path)
+
+        logs = []
+        for root, _, files in os.walk(folder_path):
+            for file in files:
+                file_path = os.path.join(root, file)
+                object_name = os.path.relpath(file_path, folder_path)
+                log = minio_connector.upload(bucket_name, object_name, file_path)
+                logs.append(log)
+
+        return "\n".join(logs),
+
+
+class MinioDownloadBucket(object):
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "minio_connector": ("MINIO_CONNECTOR",),
+                "bucket_name": ("STRING", {"default": ""}),
+                "folder_path": ("STRING", {"default": "temp"}),
+            },
+        }
+
+    RETURN_TYPES = ("STRING",)
+    RETURN_NAMES = ("log",)
+    FUNCTION = "execute"
+    DESCRIPTION = """
+    For safety, only allow to download files under ComfyUI directory, such as temp, input, output etc.
+    """
+
+    CATEGORY = MY_CATEGORY
+
+    def execute(self, minio_connector, bucket_name, folder_path):
+        if not bucket_name or not folder_path:
+            raise Exception("bucket_name or folder_path is empty")
+
+        folder_path = os.path.join(folder_paths.base_path, folder_path)
+        folder_path = os.path.join(folder_path, bucket_name)
+        os.makedirs(folder_path, exist_ok=True)
+
+        logs = []
+        objects = minio_connector.client.list_objects(bucket_name, recursive=True)
+        for obj in objects:
+            file_path = os.path.join(folder_path, obj.object_name)
+            os.makedirs(os.path.dirname(file_path), exist_ok=True)
+            log = minio_connector.download(bucket_name, obj.object_name, file_path)
+            logs.append(log)
+
+        return "\n".join(logs),
