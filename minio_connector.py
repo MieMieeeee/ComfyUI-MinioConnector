@@ -3,7 +3,7 @@ from minio import Minio
 from minio.error import S3Error
 
 import folder_paths
-from .utils import mie_log
+from .utils import mie_log, calculate_file_hash
 
 MY_CATEGORY = "🐑 Minio-Connector/🐑 Minio Connector"
 
@@ -25,17 +25,35 @@ class MinioConnector:
 
     def upload(self, bucket_name, object_name, file_path):
         try:
+            local_file_hash = calculate_file_hash(file_path)
+            remote_file_hash = self.get_object_hash(bucket_name, object_name)
+            if local_file_hash == remote_file_hash:
+                return mie_log(f"File '{file_path}' has not changed, skipping upload")
+
             self.client.fput_object(bucket_name, object_name, file_path)
-            return mie_log(f"Image uploaded to {bucket_name}/{object_name}")
+            return mie_log(f"File uploaded to {bucket_name}/{object_name}")
         except S3Error as e:
-            return mie_log(f"Failed to upload image: {e}")
+            return mie_log(f"Failed to upload file: {e}")
 
     def download(self, bucket_name, object_name, file_path):
         try:
+            remote_file_hash = self.get_object_hash(bucket_name, object_name)
+            if os.path.exists(file_path):
+                local_file_hash = calculate_file_hash(file_path)
+                if local_file_hash == remote_file_hash:
+                    return mie_log(f"File '{file_path}' has not changed, skipping download")
+
             self.client.fget_object(bucket_name, object_name, file_path)
-            return mie_log(f"Image downloaded from {bucket_name}/{object_name} to {file_path}")
+            return mie_log(f"File downloaded from {bucket_name}/{object_name} to {file_path}")
         except S3Error as e:
-            return mie_log(f"Failed to download image: {e}")
+            return mie_log(f"Failed to download file: {e}")
+
+    def get_object_hash(self, bucket_name, object_name):
+        try:
+            stat = self.client.stat_object(bucket_name, object_name)
+            return stat.etag
+        except S3Error as e:
+            return None
 
 
 class InitMinioConnector(object):
@@ -91,8 +109,8 @@ class MinioUploadFile(object):
             "required": {
                 "minio_connector": ("MINIO_CONNECTOR",),
                 "bucket_name": ("STRING", {"default": ""}),
-                "object_name": ("STRING", {"default": ""}),
                 "file_path": ("STRING", {"default": ""}),
+                "object_name": ("STRING", {"default": ""}),
             },
         }
 
