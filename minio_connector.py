@@ -99,6 +99,7 @@ class MinioCreateBucketIfNotExists(object):
     def execute(self, minio_connector, bucket_name):
         if not bucket_name:
             raise Exception("bucket_name is empty")
+
         return bucket_name, minio_connector.create_bucket(bucket_name),
 
 
@@ -117,12 +118,17 @@ class MinioUploadFile(object):
     RETURN_TYPES = ("STRING",)
     RETURN_NAMES = ("log",)
     FUNCTION = "execute"
+    DESCRIPTION = """
+    For safety, only allow to upload folder under ComfyUI directory, such as temp/abc, input/def, output/ghi etc.
+    """
 
     CATEGORY = MY_CATEGORY
 
     def execute(self, minio_connector, bucket_name, object_name, file_path):
         if not bucket_name or not file_path:
             raise Exception("bucket_name or file_path is empty")
+
+        file_path = os.path.join(folder_paths.base_path, file_path)
         if not object_name:
             object_name = os.path.basename(file_path)
         return minio_connector.upload(bucket_name, object_name, file_path),
