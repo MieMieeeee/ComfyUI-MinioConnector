@@ -1,0 +1,15 @@
+[project]
+name = "comfyui_minioconnector"
+description = "Provides a series of utility nodes designed for interacting with MinIO, including functionalities such as uploading and downloading files and folders, as well as creating buckets if they do not already exist."
+version = "1.0.0"
+license = { file = "LICENSE" }
+dependencies = []
+
+[project.urls]
+Repository = "https://github.com/MieMieeeee/ComfyUI-MinioConnector"
+#  Used by Comfy Registry https://comfyregistry.org
+
+[tool.comfy]
+PublisherId = "mie"
+DisplayName = "ComfyUI_MinioConnector"
+Icon = ""
