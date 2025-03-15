@@ -12,4 +12,4 @@ Repository = "https://github.com/MieMieeeee/ComfyUI-MinioConnector"
 [tool.comfy]
 PublisherId = "mie"
 DisplayName = "ComfyUI_MinioConnector"
-Icon = "https://github.com/MieMieeeee/ComfyUI-MieNodes/blob/2f617ba2539e8fd13a91fe790e6b5e9ae1718a58/images/channels4_profile.jpg"
+Icon = "https://github.com/MieMieeeee/ComfyUI-MieNodes/blob/2f617ba2539e8fd13a91fe790e6b5e9ae1718a58/images/channels4_profile.jpg?raw=true"
