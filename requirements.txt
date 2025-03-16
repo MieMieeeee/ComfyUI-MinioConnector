@@ -1,2 +1,2 @@
 minio
-aliyun-python-sdk-oss2
+oss2
