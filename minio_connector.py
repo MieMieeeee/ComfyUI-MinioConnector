@@ -1,4 +1,5 @@
 import os.path
+import glob
 from minio import Minio
 from minio.error import S3Error
 
@@ -128,10 +129,17 @@ class MinioUploadFile(object):
         if not bucket_name or not file_path:
             raise Exception("bucket_name or file_path is empty")
 
-        file_path = os.path.join(folder_paths.base_path, file_path)
-        if not object_name:
-            object_name = os.path.basename(file_path)
-        return minio_connector.upload(bucket_name, object_name, file_path),
+        file_paths = glob.glob(os.path.join(folder_paths.base_path, file_path))
+        if not file_paths:
+            raise Exception(f"No files matched the pattern: {file_path}")
+
+        logs = []
+        for path in file_paths:
+            current_object_name = object_name or os.path.basename(path)
+            log = minio_connector.upload(bucket_name, current_object_name, path)
+            logs.append(log)
+
+        return "\n".join(logs),
 
 
 class MinioUploadFolder(object):

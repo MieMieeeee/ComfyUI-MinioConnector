@@ -1,5 +1,6 @@
 import os
 import oss2
+import glob
 
 import folder_paths
 from .utils import mie_log, calculate_file_hash
@@ -102,13 +103,21 @@ class AliyunOSSUploadFile(object):
     CATEGORY = MY_CATEGORY
 
     def execute(self, aliyun_oss_connector, object_name, file_path):
-        if not object_name or not file_path:
+        if not file_path:
             raise Exception("object_name or file_path is empty")
 
-        file_path = os.path.join(folder_paths.base_path, file_path)
-        if not object_name:
-            object_name = os.path.basename(file_path)
-        return aliyun_oss_connector.upload(object_name, file_path),
+        file_paths = glob.glob(os.path.join(folder_paths.base_path, file_path))
+        if not file_paths:
+            raise Exception(f"No files matched the pattern: {file_path}")
+
+        logs = []
+        for path in file_paths:
+            if not object_name:
+                object_name = os.path.basename(path)
+            log = aliyun_oss_connector.upload(object_name, path)
+            logs.append(log)
+
+        return "\n".join(logs),
 
 
 class AliyunOSSUploadFolder(object):
@@ -130,19 +139,19 @@ class AliyunOSSUploadFolder(object):
 
     CATEGORY = MY_CATEGORY
 
-    def execute(self, aliyun_oss_connector, folder_path):
-        if not folder_path:
-            raise Exception("folder_path is empty")
+    def execute(self, aliyun_oss_connector, object_name, file_path):
+        if not file_path:
+            raise Exception("object_name or file_path is empty")
 
-        folder_path = os.path.join(folder_paths.base_path, folder_path)
+        file_paths = glob.glob(os.path.join(folder_paths.base_path, file_path))
+        if not file_paths:
+            raise Exception(f"No files matched the pattern: {file_path}")
 
         logs = []
-        for root, _, files in os.walk(folder_path):
-            for file in files:
-                file_path = os.path.join(root, file)
-                object_name = os.path.relpath(file_path, folder_path)
-                log = aliyun_oss_connector.upload(object_name, file_path)
-                logs.append(log)
+        for path in file_paths:
+            current_object_name = object_name or os.path.basename(path)
+            log = aliyun_oss_connector.upload(current_object_name, path)
+            logs.append(log)  # Append the log message directly
 
         return "\n".join(logs),
 
