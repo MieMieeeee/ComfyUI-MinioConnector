@@ -1,2 +1,3 @@
 minio
 oss2
+tqdm
