@@ -1,7 +1,7 @@
 [project]
 name = "comfyui_minioconnector"
 description = "Provides a series of utility nodes designed for interacting with MinIO & Aliyun OSS, including functionalities such as uploading and downloading files and folders, as well as creating buckets if they do not already exist."
-version = "1.0.5"
+version = "1.0.6"
 license = { file = "LICENSE" }
 dependencies = []
 
