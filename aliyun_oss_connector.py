@@ -185,6 +185,9 @@ class AliyunOSSDownloadBucket(object):
                 "aliyun_oss_connector": ("ALIYUN_OSS_CONNECTOR",),
                 "folder_path": ("STRING", {"default": "temp"}),
                 "pattern": ("STRING", {"default": "*"}),
+                "replace_from": ("STRING", {"default": ""}),
+                "replace_to": ("STRING", {"default": ""}),
+                "is_mock": ("BOOLEAN", {"default": False}),
             },
         }
 
@@ -197,7 +200,7 @@ class AliyunOSSDownloadBucket(object):
 
     CATEGORY = MY_CATEGORY
 
-    def execute(self, aliyun_oss_connector, folder_path, pattern):
+    def execute(self, aliyun_oss_connector, folder_path, pattern, replace_from, replace_to, is_mock):
         if not folder_path:
             raise Exception("folder_path is empty")
 
@@ -208,9 +211,12 @@ class AliyunOSSDownloadBucket(object):
         for obj in oss2.ObjectIterator(aliyun_oss_connector.bucket):
             mie_log(f"Object: {obj.key}")
             if fnmatch.fnmatch(obj.key, pattern):
-                file_path = os.path.join(folder_path, obj.key)
-                os.makedirs(os.path.dirname(file_path), exist_ok=True)
-                log = aliyun_oss_connector.download(obj.key, file_path)
+                file_path = os.path.join(folder_path, obj.key.replace(replace_from, replace_to))
+                if not is_mock:
+                    os.makedirs(os.path.dirname(file_path), exist_ok=True)
+                    log = aliyun_oss_connector.download(obj.key, file_path)
+                else:
+                    log = mie_log(f"Mock download: {obj.key} to {file_path}")
                 logs.append(log)
 
         if len(logs) == 0:
